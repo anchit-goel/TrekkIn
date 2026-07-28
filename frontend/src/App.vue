@@ -1,41 +1,82 @@
 <template>
-<div class = "container mt-5" style = "max-width: 400px;">
-  <h2 class = "mb-4">Trekking Management App - TrekkIn </h2>
+  <div>
+    <!-- Fixed top nav shown when logged in -->
+    <nav v-if="loggedIn" class="navbar navbar-dark bg-dark px-4 top-navbar sticky-top">
+      <span class="navbar-brand mb-0">🏔️ Trekking Management</span>
+      <div class="d-flex align-items-center">
+        <span class="text-white-50 me-3">
+          <span class="badge bg-primary text-uppercase me-2">{{ userRole }}</span>
+          {{ userName }}
+        </span>
+        <button class="btn btn-outline-light btn-sm" @click="handleLogout">Logout</button>
+      </div>
+    </nav>
 
-  <div v-if = "!loggedIn">
-    <div class="btn-group mb-3">
-        <button class="btn btn-outline-primary" :class="{active: view==='login'}" @click="view='login'">Login</button>
-        <button class="btn btn-outline-primary" :class="{active: view==='register'}" @click="view='register'">Register</button> 
+    <!-- Auth screen -->
+    <div v-if="!loggedIn" class="auth-wrapper">
+      <div class="auth-card">
+        <div class="card-header-custom">
+          <h2 class="mb-1">🏔️ Trekking Management</h2>
+          <p class="mb-0 opacity-75">Plan. Book. Explore.</p>
+        </div>
+
+        <div class="card-body-custom">
+          <ul class="nav nav-pills nav-pills-custom mb-4 justify-content-center gap-2">
+            <li class="nav-item">
+              <a class="nav-link" :class="{active: view==='login'}" href="#" @click.prevent="switchView('login')">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" :class="{active: view==='register'}" href="#" @click.prevent="switchView('register')">Register</a>
+            </li>
+          </ul>
+
+          <form v-if="view==='login'" @submit.prevent="handleLogin">
+            <div class="mb-3">
+              <label class="form-label small text-muted">Email</label>
+              <input v-model="loginEmail" type="email" class="form-control" placeholder="you@example.com" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small text-muted">Password</label>
+              <input v-model="loginPassword" type="password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2">Sign In</button>
+          </form>
+
+          <form v-if="view==='register'" @submit.prevent="handleRegister">
+            <div class="mb-3">
+              <label class="form-label small text-muted">Full Name</label>
+              <input v-model="regName" type="text" class="form-control" placeholder="Jane Doe" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small text-muted">Email</label>
+              <input v-model="regEmail" type="email" class="form-control" placeholder="you@example.com" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small text-muted">Password</label>
+              <input v-model="regPassword" type="password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-success w-100 py-2">Create Account</button>
+          </form>
+
+          <div v-if="errorMsg" class="alert alert-danger mt-3 py-2 mb-0">{{ errorMsg }}</div>
+          <div v-if="successMsg" class="alert alert-success mt-3 py-2 mb-0">{{ successMsg }}</div>
+        </div>
+      </div>
     </div>
 
-    <form v-if="view==='login'" @submit.prevent="handleLogin">
-      <input v-model="loginEmail" type="email" class="form-control mb-2" placeholder="Email" required>
-      <input v-model="loginPassword" type="password" class="form-control mb-2" placeholder="Password" required>
-      <button type="submit" class="btn btn-primary w-100">Login</button>
-      </form>
-
-    <form v-if="view==='register'" @submit.prevent="handleRegister">
-      <input v-model="regName" type="text" class="form-control mb-2" placeholder="Full Name" required>
-      <input v-model="regEmail" type="email" class="form-control mb-2" placeholder="Email" required>
-      <input v-model="regPassword" type="password" class="form-control mb-2" placeholder="Password" required>
-      <button type="submit" class="btn btn-success w-100">Register</button>
-    </form>
-
-    <p v-if="errorMsg" class="text-danger mt-2">{{ errorMsg }}</p>
-    <p v-if="successMsg" class="text-success mt-2">{{ successMsg }}</p>
-
+    <!-- Logged-in dashboards -->
+    <div v-else class="container-fluid mt-4 px-4">
+      <AdminDashboard v-if="userRole === 'admin'" />
+      <div v-else-if="userRole === 'staff'">Staff Dashboard coming soon</div>
+      <div v-else>Trekker Dashboard coming soon</div>
+    </div>
   </div>
-  <div v-else>
-    <p>Logged in as <strong>{{ userName }}</strong> ({{ userRole }})</p>
-    <button class="btn btn-secondary" @click="handleLogout">Logout</button>
-  </div>
-</div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-
-const API_BASE = 'http://127.0.0.1:5000/api'
+import { api } from './api.js'
+import AdminDashboard from './components/AdminDashboard.vue'
 
 const view = ref('login')
 const loggedIn = ref(false)
@@ -51,59 +92,48 @@ const regPassword = ref('')
 const errorMsg = ref('')
 const successMsg = ref('')
 
-onMounted(() => {
+onMounted(async () => {
   const token = localStorage.getItem('token')
   if (token) {
-    fetchMe(token)
+    try {
+      const data = await api.me()
+      userName.value = data.name
+      userRole.value = data.role
+      loggedIn.value = true
+    } catch {
+      localStorage.removeItem('token')
+    }
   }
 })
 
-async function fetchMe(token) {
-  const res = await fetch(`${API_BASE}/auth/me`, {
-    headers: { 'Authorization': `Bearer ${token}` }
-  })
-  if (res.ok) {
-    const data = await res.json()
-    userName.value = data.name
-    userRole.value = data.role
-    loggedIn.value = true
-  } else {
-    localStorage.removeItem('token')
-  }
+function switchView(v) {
+  view.value = v
+  errorMsg.value = ''
+  successMsg.value = ''
 }
 
 async function handleLogin() {
   errorMsg.value = ''
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: loginEmail.value, password: loginPassword.value })
-  })
-  const data = await res.json()
-  if (res.ok) {
+  try {
+    const data = await api.login(loginEmail.value, loginPassword.value)
     localStorage.setItem('token', data.access_token)
     userName.value = data.name
     userRole.value = data.role
     loggedIn.value = true
-  } else {
-    errorMsg.value = data.error || 'Login failed'
+  } catch (e) {
+    errorMsg.value = e.message
   }
 }
 
 async function handleRegister() {
   errorMsg.value = ''
   successMsg.value = ''
-  const res = await fetch(`${API_BASE}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: regName.value, email: regEmail.value, password: regPassword.value })
-  })
-  const data = await res.json()
-  if (res.ok) {
+  try {
+    await api.register(regName.value, regEmail.value, regPassword.value)
     successMsg.value = 'Registered! You can now log in.'
-    view.value = 'login'
-  } else {
-    errorMsg.value = data.error || 'Registration failed'
+    switchView('login')
+  } catch (e) {
+    errorMsg.value = e.message
   }
 }
 
@@ -114,4 +144,3 @@ function handleLogout() {
   userRole.value = ''
 }
 </script>
-
