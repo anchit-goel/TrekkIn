@@ -67,8 +67,8 @@
     <!-- Logged-in dashboards -->
     <div v-else class="container-fluid mt-4 px-4">
       <AdminDashboard v-if="userRole === 'admin'" />
-      <div v-else-if="userRole === 'staff'">Staff Dashboard coming soon</div>
-      <div v-else>Trekker Dashboard coming soon</div>
+      <StaffDashboard v-else-if="userRole === 'staff'" />
+      <TrekkerDashboard v-else />
     </div>
   </div>
 </template>
@@ -77,6 +77,8 @@
 import { ref, onMounted } from 'vue'
 import { api } from './api.js'
 import AdminDashboard from './components/AdminDashboard.vue'
+import StaffDashboard from './components/StaffDashboard.vue'
+import TrekkerDashboard from './components/TrekkerDashboard.vue'
 
 const view = ref('login')
 const loggedIn = ref(false)

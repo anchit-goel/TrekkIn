@@ -15,6 +15,8 @@ def register():
     if not email or not name or not password:
         return jsonify({'error': 'Missing fields'}), 400
 
+    email = email.strip().lower()
+
     if User.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already registered'}), 409
 
@@ -31,6 +33,9 @@ def login():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
+
+    if email:
+        email = email.strip().lower()
 
     user = User.query.filter_by(email=email).first()
 

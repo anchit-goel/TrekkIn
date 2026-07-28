@@ -132,10 +132,12 @@ def create_staff():
     if not all(k in data for k in required):
         return jsonify({'error': 'Missing required fields'}), 400
 
-    if User.query.filter_by(email=data['email']).first():
+    email = data['email'].strip().lower()
+
+    if User.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already exists'}), 409
 
-    staff = User(name=data['name'], email=data['email'], role='staff', active=True)
+    staff = User(name=data['name'], email=email, role='staff', active=True)
     staff.set_password(data['password'])
     db.session.add(staff)
     db.session.commit()
