@@ -78,7 +78,7 @@ def update_my_trek(trek_id):
         trek.available_slots = new_slots
 
     if 'status' in data:
-        allowed = ['Open', 'Closed', 'Ongoing', 'Completed']
+        allowed = ['Pending', 'Approved', 'Open', 'Ongoing', 'Closed', 'Completed']
         if data['status'] not in allowed:
             return jsonify({'error': f'status must be one of {allowed}'}), 400
         trek.status = data['status']

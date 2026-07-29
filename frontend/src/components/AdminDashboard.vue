@@ -56,7 +56,7 @@
             <td>{{ t.available_slots }} / {{ t.total_slots }}</td>
             <td>
               <select :value="t.status" @change="changeStatus(t, $event.target.value)" class="form-select form-select-sm">
-                <option>Pending</option><option>Approved</option><option>Open</option><option>Closed</option><option>Completed</option>
+                <option>Pending</option><option>Approved</option><option>Open</option><option>Ongoing</option><option>Closed</option><option>Completed</option>
               </select>
             </td>
             <td>
