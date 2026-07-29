@@ -87,6 +87,8 @@
           </tr>
         </tbody>
       </table>
+      <button class="btn btn-outline-primary mt-3" @click="startExport">Export Booking History (CSV, emailed to you)</button>
+       <p v-if="exportMsg" class="text-success mt-2 small">{{ exportMsg }}</p>
     </div>
 
     <!-- PROFILE TAB -->
@@ -208,6 +210,18 @@ function diffBadge(d) {
 }
 function statusBadge(s) {
   return { Booked: 'bg-info text-dark', Cancelled: 'bg-danger', Completed: 'bg-primary' }[s] || 'bg-secondary'
+}
+
+const exportMsg = ref('')
+
+async function startExport() {
+  exportMsg.value = ''
+  try {
+    const res = await api.triggerExport()
+    exportMsg.value = 'Export started — check your email shortly.'
+  } catch (e) {
+    errorMsg.value = e.message
+  }
 }
 </script>
 

@@ -126,3 +126,34 @@ def update_profile():
 
     db.session.commit()
     return jsonify({'message': 'Profile updated', 'name': user.name}), 200
+
+@user_bp.route('/export', methods=['POST'])
+@role_required('trekker')
+def trigger_export():
+    from app.tasks.csv_export import export_booking_history
+    user_id = get_current_user_id()
+    task = export_booking_history.delay(user_id)
+    return jsonify({'task_id': task.id, 'message': 'Export started, you will be emailed when ready'}), 202
+
+
+@user_bp.route('/export/<task_id>', methods=['GET'])
+@role_required('trekker')
+def export_status(task_id):
+    from celery_app import celery
+    result = celery.AsyncResult(task_id)
+    if result.state == 'SUCCESS':
+        return jsonify({'status': 'done', 'filename': result.result}), 200
+    elif result.state == 'FAILURE':
+        return jsonify({'status': 'failed', 'error': str(result.result)}), 200
+    return jsonify({'status': result.state.lower()}), 200
+
+
+@user_bp.route('/export/<task_id>/download', methods=['GET'])
+@role_required('trekker')
+def download_export(task_id):
+    from celery_app import celery
+    from flask import send_from_directory, current_app
+    result = celery.AsyncResult(task_id)
+    if result.state != 'SUCCESS':
+        return jsonify({'error': 'Export not ready'}), 400
+    return send_from_directory(current_app.config['EXPORT_DIR'], result.result, as_attachment=True)

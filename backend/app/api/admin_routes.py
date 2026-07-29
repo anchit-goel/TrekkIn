@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from app import db
 from app.auth import role_required
 from app.models import User, Trek, Booking, StaffProfile
+from datetime import datetime
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 
@@ -58,9 +59,14 @@ def create_trek():
         difficulty=data['difficulty'],
         duration_days=data['duration_days'],
         total_slots=data['total_slots'],
-        available_slots=data['total_slots'],  # starts full
+        available_slots=data['total_slots'],
         status=data.get('status', 'Pending')
     )
+    if data.get('start_date'):
+        trek.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+    if data.get('end_date'):
+        trek.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+
     db.session.add(trek)
     db.session.commit()
     return jsonify({'message': 'Trek created', 'id': trek.id}), 201
@@ -75,6 +81,11 @@ def update_trek(trek_id):
     for field in ['name', 'location', 'difficulty', 'duration_days', 'status']:
         if field in data:
             setattr(trek, field, data[field])
+
+    if 'start_date' in data and data['start_date']:
+        trek.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
+    if 'end_date' in data and data['end_date']:
+        trek.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
 
     if 'total_slots' in data:
         diff = data['total_slots'] - trek.total_slots

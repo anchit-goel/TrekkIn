@@ -126,5 +126,10 @@ export const api = {
     fetch(`${API_BASE}/user/profile`, {
       method: 'PUT', headers: authHeaders(), body: JSON.stringify({ name })
     }).then(handle),
-}
 
+  triggerExport: () =>
+    fetch(`${API_BASE}/user/export`, { method: 'POST', headers: authHeaders() }).then(handle),
+
+  exportStatus: (taskId) =>
+    fetch(`${API_BASE}/user/export/${taskId}`, { headers: authHeaders() }).then(handle),
+}
