@@ -76,7 +76,55 @@ export const api = {
       method: 'PUT', headers: authHeaders()
     }).then(handle),
 
+    // staff
+  staffDashboard: () =>
+    fetch(`${API_BASE}/staff/dashboard`, { headers: authHeaders() }).then(handle),
+
+  staffTreks: () =>
+    fetch(`${API_BASE}/staff/treks`, { headers: authHeaders() }).then(handle),
+
+  staffUpdateTrek: (trekId, payload) =>
+    fetch(`${API_BASE}/staff/treks/${trekId}`, {
+      method: 'PUT', headers: authHeaders(), body: JSON.stringify(payload)
+    }).then(handle),
+
+  staffTrekParticipants: (trekId) =>
+    fetch(`${API_BASE}/staff/treks/${trekId}/participants`, { headers: authHeaders() }).then(handle),
+
+  staffUpdateBooking: (bookingId, status) =>
+    fetch(`${API_BASE}/staff/bookings/${bookingId}`, {
+      method: 'PUT', headers: authHeaders(), body: JSON.stringify({ status })
+ }).then(handle),
+
   allBookings: () =>
     fetch(`${API_BASE}/admin/bookings`, { headers: authHeaders() }).then(handle),
+
+  // trekker
+  browseTreks: () =>
+    fetch(`${API_BASE}/user/treks`, { headers: authHeaders() }).then(handle),
+
+  bookTrek: (trekId) =>
+    fetch(`${API_BASE}/user/bookings`, {
+      method: 'POST', headers: authHeaders(), body: JSON.stringify({ trek_id: trekId })
+    }).then(handle),
+
+  myBookings: () =>
+    fetch(`${API_BASE}/user/bookings`, { headers: authHeaders() }).then(handle),
+
+  cancelBooking: (bookingId) =>
+    fetch(`${API_BASE}/user/bookings/${bookingId}/cancel`, {
+      method: 'PUT', headers: authHeaders()
+    }).then(handle),
+
+  trekHistory: () =>
+    fetch(`${API_BASE}/user/history`, { headers: authHeaders() }).then(handle),
+
+  getProfile: () =>
+    fetch(`${API_BASE}/user/profile`, { headers: authHeaders() }).then(handle),
+
+  updateProfile: (name) =>
+    fetch(`${API_BASE}/user/profile`, {
+      method: 'PUT', headers: authHeaders(), body: JSON.stringify({ name })
+    }).then(handle),
 }
 

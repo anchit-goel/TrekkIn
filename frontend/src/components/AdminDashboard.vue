@@ -11,6 +11,8 @@
       </div>
     </div>
 
+    <div v-if="errorMsg" class="alert alert-danger">{{ errorMsg }}</div>
+
     <ul class="nav nav-pills mb-3">
       <li class="nav-item"><a class="nav-link" :class="{active: tab==='treks'}" href="#" @click.prevent="tab='treks'">Treks</a></li>
       <li class="nav-item"><a class="nav-link" :class="{active: tab==='staff'}" href="#" @click.prevent="tab='staff'">Staff</a></li>
@@ -128,6 +130,8 @@ import { ref, computed, onMounted } from 'vue'
 import { api } from '../api.js'
 
 const tab = ref('treks')
+const errorMsg = ref('')
+
 const stats = ref({ total_treks: 0, total_users: 0, total_staff: 0, total_bookings: 0 })
 const treks = ref([])
 const staff = ref([])
@@ -158,38 +162,67 @@ async function loadAll() {
 onMounted(loadAll)
 
 async function submitTrek() {
-  await api.createTrek(trekForm.value)
-  trekForm.value = { name: '', location: '', difficulty: '', duration_days: null, total_slots: null }
-  showTrekForm.value = false
-  await loadAll()
+  errorMsg.value = ''
+  try {
+    await api.createTrek(trekForm.value)
+    trekForm.value = { name: '', location: '', difficulty: '', duration_days: null, total_slots: null }
+    showTrekForm.value = false
+    await loadAll()
+  } catch (e) {
+    errorMsg.value = e.message
+  }
 }
 
 async function removeTrek(id) {
   if (!confirm('Delete this trek?')) return
-  await api.deleteTrek(id)
-  await loadAll()
+  errorMsg.value = ''
+  try {
+    await api.deleteTrek(id)
+    await loadAll()
+  } catch (e) {
+    errorMsg.value = e.message
+  }
 }
 
 async function changeStatus(trek, newStatus) {
-  await api.updateTrek(trek.id, { status: newStatus })
-  await loadAll()
+  errorMsg.value = ''
+  try {
+    await api.updateTrek(trek.id, { status: newStatus })
+    await loadAll()
+  } catch (e) {
+    errorMsg.value = e.message
+  }
 }
 
 async function assign(trek, staffId) {
-  if (!staffId) return
-  await api.assignStaff(trek.id, parseInt(staffId))
-  await loadAll()
+  errorMsg.value = ''
+  try {
+    await api.assignStaff(trek.id, staffId ? parseInt(staffId) : null)
+    await loadAll()
+  } catch (e) {
+    errorMsg.value = e.message
+  }
 }
 
 async function submitStaff() {
-  await api.createStaff(staffForm.value)
-  staffForm.value = { name: '', email: '', password: '' }
-  showStaffForm.value = false
-  await loadAll()
+  errorMsg.value = ''
+  try {
+    await api.createStaff(staffForm.value)
+    staffForm.value = { name: '', email: '', password: '' }
+    showStaffForm.value = false
+    await loadAll()
+  } catch (e) {
+    errorMsg.value = e.message
+  }
 }
 
 async function toggleUser(user) {
-  await api.toggleActive(user.id)
-  await loadAll()
+  errorMsg.value = ''
+  try {
+    await api.toggleActive(user.id)
+    await loadAll()
+  } catch (e) {
+    errorMsg.value = e.message
+  }
 }
 </script>

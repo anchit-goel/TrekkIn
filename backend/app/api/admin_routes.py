@@ -101,6 +101,11 @@ def assign_staff(trek_id):
     data = request.get_json()
     staff_id = data.get('staff_id')
 
+    if staff_id is None:
+        trek.assigned_staff_id = None
+        db.session.commit()
+        return jsonify({'message': 'Staff unassigned'}), 200
+
     staff = User.query.filter_by(id=staff_id, role='staff').first()
     if not staff:
         return jsonify({'error': 'Invalid staff ID'}), 400

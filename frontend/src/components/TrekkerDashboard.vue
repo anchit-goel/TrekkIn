@@ -1,14 +1,18 @@
 <template>
   <div>
     <ul class="nav nav-pills nav-pills-custom mb-3">
-      <li class="nav-item"><a class="nav-link" :class="{active: tab==='browse'}" href="#" @click.prevent="tab='browse'">Browse Treks</a></li>
-      <li class="nav-item"><a class="nav-link" :class="{active: tab==='bookings'}" href="#" @click.prevent="tab='bookings'">My Bookings</a></li>
-      <li class="nav-item"><a class="nav-link" :class="{active: tab==='history'}" href="#" @click.prevent="tab='history'">Trekking History</a></li>
-      <li class="nav-item"><a class="nav-link" :class="{active: tab==='profile'}" href="#" @click.prevent="tab='profile'">My Profile</a></li>
+      <li class="nav-item"><a class="nav-link" :class="{active: tab==='browse'}" href="#" @click.prevent="switchTab('browse')">Browse Treks</a></li>
+      <li class="nav-item"><a class="nav-link" :class="{active: tab==='bookings'}" href="#" @click.prevent="switchTab('bookings')">My Bookings</a></li>
+      <li class="nav-item"><a class="nav-link" :class="{active: tab==='history'}" href="#" @click.prevent="switchTab('history')">Trekking History</a></li>
+      <li class="nav-item"><a class="nav-link" :class="{active: tab==='profile'}" href="#" @click.prevent="switchTab('profile')">My Profile</a></li>
     </ul>
 
+    <div v-if="loading" class="text-muted">Loading...</div>
+    <div v-if="errorMsg" class="alert alert-danger">{{ errorMsg }}</div>
+    <div v-if="successMsg" class="alert alert-success">{{ successMsg }}</div>
+
     <!-- BROWSE TAB -->
-    <div v-if="tab==='browse'">
+    <div v-if="tab==='browse' && !loading">
       <div class="row g-2 mb-3">
         <div class="col-md-4">
           <input v-model="filters.search" class="form-control" placeholder="Search treks...">
@@ -26,6 +30,8 @@
           </select>
         </div>
       </div>
+
+      <div v-if="openTreks.length === 0" class="text-muted">No open treks available right now.</div>
 
       <div class="row g-3">
         <div class="col-md-4" v-for="t in filteredTreks" :key="t.id">
@@ -47,14 +53,17 @@
     </div>
 
     <!-- MY BOOKINGS TAB -->
-    <div v-if="tab==='bookings'">
-      <table class="table table-striped bg-white">
-        <thead><tr><th>Trek</th><th>Status</th><th>Booking Date</th><th>Action</th></tr></thead>
+    <div v-if="tab==='bookings' && !loading">
+      <div v-if="bookings.length === 0" class="text-muted">You have no bookings yet.</div>
+
+      <table v-else class="table table-striped bg-white">
+        <thead><tr><th>Trek</th><th>Location</th><th>Status</th><th>Booking Date</th><th>Action</th></tr></thead>
         <tbody>
-          <tr v-for="b in mockBookings" :key="b.id">
+          <tr v-for="b in bookings" :key="b.id">
             <td>{{ b.trek_name }}</td>
+            <td>{{ b.location }}</td>
             <td><span class="badge" :class="statusBadge(b.status)">{{ b.status }}</span></td>
-            <td>{{ b.booking_date }}</td>
+            <td>{{ b.booking_date.split('T')[0] }}</td>
             <td>
               <button class="btn btn-sm btn-outline-danger" v-if="b.status==='Booked'" @click="cancelBooking(b)">Cancel</button>
             </td>
@@ -64,14 +73,16 @@
     </div>
 
     <!-- HISTORY TAB -->
-    <div v-if="tab==='history'">
-      <table class="table table-striped bg-white">
+    <div v-if="tab==='history' && !loading">
+      <div v-if="history.length === 0" class="text-muted">No completed treks yet.</div>
+
+      <table v-else class="table table-striped bg-white">
         <thead><tr><th>Trek</th><th>Location</th><th>Completed On</th><th>Status</th></tr></thead>
         <tbody>
-          <tr v-for="h in mockHistory" :key="h.id">
+          <tr v-for="h in history" :key="h.trek_name + h.date">
             <td>{{ h.trek_name }}</td>
             <td>{{ h.location }}</td>
-            <td>{{ h.date }}</td>
+            <td>{{ h.date.split('T')[0] }}</td>
             <td><span class="badge bg-primary">{{ h.status }}</span></td>
           </tr>
         </tbody>
@@ -79,7 +90,7 @@
     </div>
 
     <!-- PROFILE TAB -->
-    <div v-if="tab==='profile'">
+    <div v-if="tab==='profile' && !loading">
       <div class="card shadow-sm" style="max-width: 500px;">
         <div class="card-body">
           <h5 class="card-title mb-3">My Profile</h5>
@@ -89,14 +100,9 @@
           </div>
           <div class="mb-3">
             <label class="form-label small text-muted">Email</label>
-            <input v-model="profile.email" class="form-control" disabled>
-          </div>
-          <div class="mb-3">
-            <label class="form-label small text-muted">Phone</label>
-            <input v-model="profile.phone" class="form-control" placeholder="Optional">
+            <input :value="profile.email" class="form-control" disabled>
           </div>
           <button class="btn btn-primary" @click="saveProfile">Save Changes</button>
-          <span v-if="profileSaved" class="text-success ms-2 small">Saved ✓</span>
         </div>
       </div>
     </div>
@@ -104,37 +110,98 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { api } from '../api.js'
 
 const tab = ref('browse')
+const loading = ref(false)
+const errorMsg = ref('')
+const successMsg = ref('')
 
 const filters = ref({ search: '', difficulty: '', location: '' })
+const openTreks = ref([])
+const bookings = ref([])
+const history = ref([])
+const profile = ref({ name: '', email: '' })
 
-const mockOpenTreks = ref([
-  { id: 1, name: 'Everest Base Camp', location: 'Nepal', difficulty: 'Hard', duration_days: 12, available_slots: 3 },
-  { id: 2, name: 'Valley of Flowers', location: 'Uttarakhand', difficulty: 'Moderate', duration_days: 5, available_slots: 5 },
-  { id: 3, name: 'Hampta Pass', location: 'Himachal Pradesh', difficulty: 'Easy', duration_days: 4, available_slots: 0 },
-])
+const locations = computed(() => [...new Set(openTreks.value.map(t => t.location))])
 
-const locations = computed(() => [...new Set(mockOpenTreks.value.map(t => t.location))])
-
-const filteredTreks = computed(() => mockOpenTreks.value.filter(t => {
+const filteredTreks = computed(() => openTreks.value.filter(t => {
   const matchesSearch = t.name.toLowerCase().includes(filters.value.search.toLowerCase())
   const matchesDifficulty = !filters.value.difficulty || t.difficulty === filters.value.difficulty
   const matchesLocation = !filters.value.location || t.location === filters.value.location
   return matchesSearch && matchesDifficulty && matchesLocation
 }))
 
-const mockBookings = ref([
-  { id: 1, trek_name: 'Everest Base Camp', status: 'Booked', booking_date: '2026-07-20' },
-])
+function clearMsgs() {
+  errorMsg.value = ''
+  successMsg.value = ''
+}
 
-const mockHistory = ref([
-  { id: 1, trek_name: 'Kedarkantha Trek', location: 'Uttarakhand', date: '2026-03-15', status: 'Completed' },
-])
+async function loadBrowse() {
+  openTreks.value = await api.browseTreks()
+}
+async function loadBookings() {
+  bookings.value = await api.myBookings()
+}
+async function loadHistory() {
+  history.value = await api.trekHistory()
+}
+async function loadProfile() {
+  profile.value = await api.getProfile()
+}
 
-const profile = ref({ name: 'Test User', email: 'trekker@test.com', phone: '' })
-const profileSaved = ref(false)
+async function switchTab(t) {
+  tab.value = t
+  clearMsgs()
+  loading.value = true
+  try {
+    if (t === 'browse') await loadBrowse()
+    else if (t === 'bookings') await loadBookings()
+    else if (t === 'history') await loadHistory()
+    else if (t === 'profile') await loadProfile()
+  } catch (e) {
+    errorMsg.value = e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => switchTab('browse'))
+
+async function bookTrek(trek) {
+  clearMsgs()
+  if (!confirm(`Confirm booking for "${trek.name}"?`)) return
+  try {
+    await api.bookTrek(trek.id)
+    successMsg.value = `Booked "${trek.name}" successfully!`
+    await loadBrowse()
+  } catch (e) {
+    errorMsg.value = e.message
+  }
+}
+
+async function cancelBooking(booking) {
+  clearMsgs()
+  if (!confirm(`Cancel booking for "${booking.trek_name}"?`)) return
+  try {
+    await api.cancelBooking(booking.id)
+    successMsg.value = 'Booking cancelled.'
+    await loadBookings()
+  } catch (e) {
+    errorMsg.value = e.message
+  }
+}
+
+async function saveProfile() {
+  clearMsgs()
+  try {
+    const res = await api.updateProfile(profile.value.name)
+    successMsg.value = 'Profile updated.'
+  } catch (e) {
+    errorMsg.value = e.message
+  }
+}
 
 function diffBadge(d) {
   return { Easy: 'bg-success', Moderate: 'bg-warning text-dark', Hard: 'bg-danger' }[d] || 'bg-secondary'
@@ -142,30 +209,5 @@ function diffBadge(d) {
 function statusBadge(s) {
   return { Booked: 'bg-info text-dark', Cancelled: 'bg-danger', Completed: 'bg-primary' }[s] || 'bg-secondary'
 }
-
-function bookTrek(trek) {
-  if (confirm(`Confirm booking for "${trek.name}"?`)) {
-    mockBookings.value.push({
-      id: mockBookings.value.length + 1,
-      trek_name: trek.name,
-      status: 'Booked',
-      booking_date: new Date().toISOString().split('T')[0]
-    })
-    trek.available_slots -= 1
-    tab.value = 'bookings'
-  }
-}
-
-function cancelBooking(booking) {
-  if (confirm(`Cancel booking for "${booking.trek_name}"?`)) {
-    booking.status = 'Cancelled'
-    const trek = mockOpenTreks.value.find(t => t.name === booking.trek_name)
-    if (trek) trek.available_slots += 1
-  }
-}
-
-function saveProfile() {
-  profileSaved.value = true
-  setTimeout(() => profileSaved.value = false, 2000)
-}
 </script>
+

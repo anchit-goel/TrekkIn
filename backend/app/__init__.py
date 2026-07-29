@@ -22,5 +22,11 @@ def create_app():
     from app.api.admin_routes import admin_bp
     app.register_blueprint(admin_bp)
     
+    from app.api.staff_routes import staff_bp
+    app.register_blueprint(staff_bp)
+    
+    from app.api.user_routes import user_bp
+    app.register_blueprint(user_bp)
+    
     return app
 
