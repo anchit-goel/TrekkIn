@@ -3,6 +3,7 @@ from flask_jwt_extended import get_jwt_identity
 from app import db
 from app.auth import role_required
 from app.models import Trek, Booking
+from app.cache.redis_client import cache_delete
 
 staff_bp = Blueprint('staff', __name__, url_prefix='/api/staff')
 
@@ -84,6 +85,7 @@ def update_my_trek(trek_id):
         trek.status = data['status']
 
     db.session.commit()
+    cache_delete('open_treks', 'admin_all_treks')
     return jsonify({'message': 'Trek updated'}), 200
 
 

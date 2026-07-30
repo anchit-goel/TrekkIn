@@ -3,7 +3,7 @@ from flask_jwt_extended import get_jwt_identity
 from app import db
 from app.auth import role_required
 from app.models import Trek, Booking, User
-from app.cache.redis_client import cache_get, cache_set
+from app.cache.redis_client import cache_get, cache_set, cache_delete
 
 user_bp = Blueprint('user', __name__, url_prefix='/api/user')
 
@@ -59,7 +59,7 @@ def book_trek():
 
     db.session.add(booking)
     db.session.commit()
-
+    cache_delete('open_treks', 'admin_all_treks')
     return jsonify({'message': 'Trek booked successfully', 'booking_id': booking.id}), 201
 
 
@@ -96,6 +96,7 @@ def cancel_booking(booking_id):
     booking.trek.available_slots = min(booking.trek.total_slots, booking.trek.available_slots + 1)
 
     db.session.commit()
+    cache_delete('open_treks', 'admin_all_treks')
     return jsonify({'message': 'Booking cancelled'}), 200
 
 

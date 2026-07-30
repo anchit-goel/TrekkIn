@@ -79,6 +79,7 @@ def create_trek():
 
     db.session.add(trek)
     db.session.commit()
+    cache_delete('open_treks', 'admin_all_treks')
     return jsonify({'message': 'Trek created', 'id': trek.id}), 201
 
 
@@ -103,6 +104,7 @@ def update_trek(trek_id):
         trek.available_slots = max(0, trek.available_slots + diff)
 
     db.session.commit()
+    cache_delete('open_treks', 'admin_all_treks')
     return jsonify({'message': 'Trek updated'}), 200
 
 
@@ -112,6 +114,7 @@ def delete_trek(trek_id):
     trek = Trek.query.get_or_404(trek_id)
     db.session.delete(trek)
     db.session.commit()
+    cache_delete('open_treks', 'admin_all_treks')
     return jsonify({'message': 'Trek deleted'}), 200
 
 
@@ -125,6 +128,7 @@ def assign_staff(trek_id):
     if staff_id is None:
         trek.assigned_staff_id = None
         db.session.commit()
+        cache_delete('open_treks', 'admin_all_treks')
         return jsonify({'message': 'Staff unassigned'}), 200
 
     staff = User.query.filter_by(id=staff_id, role='staff').first()
@@ -133,6 +137,7 @@ def assign_staff(trek_id):
 
     trek.assigned_staff_id = staff.id
     db.session.commit()
+    cache_delete('open_treks', 'admin_all_treks')
     return jsonify({'message': f'Staff {staff.name} assigned to trek {trek.name}'}), 200
 
 
