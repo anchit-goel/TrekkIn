@@ -3,6 +3,7 @@ from flask_jwt_extended import get_jwt_identity
 from app import db
 from app.auth import role_required
 from app.models import Trek, Booking, User
+from app.cache.redis_client import cache_get, cache_set
 
 user_bp = Blueprint('user', __name__, url_prefix='/api/user')
 
@@ -14,16 +15,22 @@ def get_current_user_id():
 @user_bp.route('/treks', methods=['GET'])
 @role_required('trekker')
 def browse_treks():
-    # Only show treks that are actually bookable
+    cached = cache_get('open_treks')
+    if cached is not None:
+        return jsonify(cached), 200
+
     treks = Trek.query.filter_by(status='Open').all()
-    return jsonify([{
+    result = [{
         'id': t.id,
         'name': t.name,
         'location': t.location,
         'difficulty': t.difficulty,
         'duration_days': t.duration_days,
         'available_slots': t.available_slots
-    } for t in treks]), 200
+    } for t in treks]
+
+    cache_set('open_treks', result, ttl_seconds=30)
+    return jsonify(result), 200
 
 
 @user_bp.route('/bookings', methods=['POST'])

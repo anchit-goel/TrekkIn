@@ -3,6 +3,7 @@ from app import db
 from app.auth import role_required
 from app.models import User, Trek, Booking, StaffProfile
 from datetime import datetime
+from app.cache.redis_client import cache_get, cache_set, cache_delete
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 
@@ -25,11 +26,17 @@ def dashboard_stats():
 
 
 # ---------- Trek CRUD ----------
+
+
 @admin_bp.route('/treks', methods=['GET'])
 @role_required('admin')
 def list_treks():
+    cached = cache_get('admin_all_treks')
+    if cached is not None:
+        return jsonify(cached), 200
+
     treks = Trek.query.all()
-    return jsonify([{
+    result = [{
         'id': t.id,
         'name': t.name,
         'location': t.location,
@@ -42,7 +49,10 @@ def list_treks():
         'status': t.status,
         'start_date': t.start_date.isoformat() if t.start_date else None,
         'end_date': t.end_date.isoformat() if t.end_date else None
-    } for t in treks]), 200
+    } for t in treks]
+
+    cache_set('admin_all_treks', result, ttl_seconds=30)
+    return jsonify(result), 200
 
 
 @admin_bp.route('/treks', methods=['POST'])
