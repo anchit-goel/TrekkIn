@@ -8,12 +8,16 @@ body {
   letter-spacing: 0.3px;
 }
 
+.navbar-brand-green {
+  background-color: #1e7145;
+}
+
 .auth-wrapper {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: #ffffff;
 }
 
 .auth-card {
@@ -26,7 +30,7 @@ body {
 }
 
 .auth-card .card-header-custom {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: #1e7145;
   color: white;
   padding: 2rem 2rem 1.5rem;
   text-align: center;
@@ -43,7 +47,7 @@ body {
 }
 
 .nav-pills-custom .nav-link.active {
-  background-color: #2a5298;
+  background-color: #1e7145;
 }
 
 .stat-card {
@@ -58,7 +62,7 @@ body {
 
 .stat-card h3 {
   font-weight: 700;
-  color: #2a5298;
+  color: #1e7145;
 }
 
 .top-navbar {

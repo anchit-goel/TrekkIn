@@ -112,6 +112,9 @@ def update_trek(trek_id):
 @role_required('admin')
 def delete_trek(trek_id):
     trek = Trek.query.get_or_404(trek_id)
+    has_bookings = Booking.query.filter_by(trek_id=trek_id).first() is not None
+    if has_bookings:
+        return jsonify({'error': "Cannot delete trek with existing bookings. Consider setting its status to 'Closed' or 'Completed' instead."}), 409
     db.session.delete(trek)
     db.session.commit()
     cache_delete('open_treks', 'admin_all_treks')

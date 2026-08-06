@@ -12,7 +12,7 @@ with app.app_context():
     else:
         admin = User(
             name='Admin',
-            email='admin@trekapp.com',
+            email='admin@trekkin.com',
             role='admin',
             active=True
         )

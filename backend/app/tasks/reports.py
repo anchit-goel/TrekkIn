@@ -12,7 +12,7 @@ def send_monthly_report():
     app = create_app()
     with app.app_context():
         total_treks = Trek.query.count()
-        total_participants = Booking.query.filter_by(status='Completed').count()
+        total_participants = db.session.query(func.count(func.distinct(Booking.user_id))).filter(Booking.status == 'Completed').scalar()
 
         popular = (
             db.session.query(Trek.name, func.count(Booking.id).label('cnt'))

@@ -14,16 +14,16 @@
     <!-- BROWSE TAB -->
     <div v-if="tab==='browse' && !loading">
       <div class="row g-2 mb-3">
-        <div class="col-md-4">
+        <div class="col-12 col-md-4">
           <input v-model="filters.search" class="form-control" placeholder="Search treks...">
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4">
           <select v-model="filters.difficulty" class="form-select">
             <option value="">Any Difficulty</option>
             <option>Easy</option><option>Moderate</option><option>Hard</option>
           </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4">
           <select v-model="filters.location" class="form-select">
             <option value="">Any Location</option>
             <option v-for="loc in locations" :key="loc">{{ loc }}</option>
@@ -34,7 +34,7 @@
       <div v-if="openTreks.length === 0" class="text-muted">No open treks available right now.</div>
 
       <div class="row g-3">
-        <div class="col-md-4" v-for="t in filteredTreks" :key="t.id">
+        <div class="col-12 col-md-4" v-for="t in filteredTreks" :key="t.id">
           <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
               <div class="d-flex justify-content-between mb-2">
@@ -56,37 +56,41 @@
     <div v-if="tab==='bookings' && !loading">
       <div v-if="bookings.length === 0" class="text-muted">You have no bookings yet.</div>
 
-      <table v-else class="table table-striped bg-white">
-        <thead><tr><th>Trek</th><th>Location</th><th>Status</th><th>Booking Date</th><th>Action</th></tr></thead>
-        <tbody>
-          <tr v-for="b in bookings" :key="b.id">
-            <td>{{ b.trek_name }}</td>
-            <td>{{ b.location }}</td>
-            <td><span class="badge" :class="statusBadge(b.status)">{{ b.status }}</span></td>
-            <td>{{ b.booking_date.split('T')[0] }}</td>
-            <td>
-              <button class="btn btn-sm btn-outline-danger" v-if="b.status==='Booked'" @click="cancelBooking(b)">Cancel</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table v-if="bookings.length" class="table table-striped bg-white">
+          <thead><tr><th>Trek</th><th>Location</th><th>Status</th><th>Booking Date</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr v-for="b in bookings" :key="b.id">
+              <td>{{ b.trek_name }}</td>
+              <td>{{ b.location }}</td>
+              <td><span class="badge" :class="statusBadge(b.status)">{{ b.status }}</span></td>
+              <td>{{ b.booking_date.split('T')[0] }}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-danger" v-if="b.status==='Booked'" @click="cancelBooking(b)">Cancel</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- HISTORY TAB -->
     <div v-if="tab==='history' && !loading">
       <div v-if="history.length === 0" class="text-muted">No completed treks yet.</div>
 
-      <table v-else class="table table-striped bg-white">
-        <thead><tr><th>Trek</th><th>Location</th><th>Completed On</th><th>Status</th></tr></thead>
-        <tbody>
-          <tr v-for="h in history" :key="h.trek_name + h.date">
-            <td>{{ h.trek_name }}</td>
-            <td>{{ h.location }}</td>
-            <td>{{ h.date.split('T')[0] }}</td>
-            <td><span class="badge bg-primary">{{ h.status }}</span></td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table v-if="history.length" class="table table-striped bg-white">
+          <thead><tr><th>Trek</th><th>Location</th><th>Completed On</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr v-for="h in history" :key="h.trek_name + h.date">
+              <td>{{ h.trek_name }}</td>
+              <td>{{ h.location }}</td>
+              <td>{{ h.date.split('T')[0] }}</td>
+              <td><span class="badge bg-primary">{{ h.status }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <button class="btn btn-outline-primary mt-3" @click="startExport">Export Booking History (CSV, emailed to you)</button>
        <p v-if="exportMsg" class="text-success mt-2 small">{{ exportMsg }}</p>
     </div>
@@ -114,7 +118,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { api } from '../api.js'
+import { inject } from 'vue'
 
+const showToast = inject('showToast')
 const tab = ref('browse')
 const loading = ref(false)
 const errorMsg = ref('')
@@ -172,26 +178,24 @@ async function switchTab(t) {
 onMounted(() => switchTab('browse'))
 
 async function bookTrek(trek) {
-  clearMsgs()
   if (!confirm(`Confirm booking for "${trek.name}"?`)) return
   try {
     await api.bookTrek(trek.id)
-    successMsg.value = `Booked "${trek.name}" successfully!`
+    showToast(`Booked "${trek.name}" successfully!`, 'success')
     await loadBrowse()
   } catch (e) {
-    errorMsg.value = e.message
+    showToast(e.message, 'error')
   }
 }
 
 async function cancelBooking(booking) {
-  clearMsgs()
   if (!confirm(`Cancel booking for "${booking.trek_name}"?`)) return
   try {
     await api.cancelBooking(booking.id)
-    successMsg.value = 'Booking cancelled.'
+    showToast('Booking cancelled.', 'success')
     await loadBookings()
   } catch (e) {
-    errorMsg.value = e.message
+    showToast(e.message, 'error')
   }
 }
 

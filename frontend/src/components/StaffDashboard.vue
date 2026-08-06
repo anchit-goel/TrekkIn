@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="row mb-4">
-      <div class="col-md-4">
+    <div class="row mb-4 g-3">
+      <div class="col-12 col-md-4">
         <div class="card text-center shadow-sm stat-card">
           <div class="card-body">
             <h3>{{ stats.total_treks }}</h3>
@@ -9,7 +9,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-4">
+      <div class="col-12 col-md-4">
         <div class="card text-center shadow-sm stat-card">
           <div class="card-body">
             <h3>{{ stats.total_trekkers }}</h3>
@@ -17,7 +17,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-4">
+      <div class="col-12 col-md-4">
         <div class="card text-center shadow-sm stat-card">
           <div class="card-body">
             <h3>{{ stats.ongoing_treks }}</h3>
@@ -40,7 +40,7 @@
       <div v-if="treks.length === 0" class="text-muted">No treks assigned to you yet.</div>
 
       <div class="row g-3">
-        <div class="col-md-6" v-for="t in treks" :key="t.id">
+        <div class="col-12 col-md-6" v-for="t in treks" :key="t.id">
           <div class="card shadow-sm">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-start mb-2">
@@ -84,22 +84,24 @@
 
         <div v-if="participants.length === 0" class="text-muted">No bookings for this trek yet.</div>
 
-        <table v-else class="table table-striped bg-white">
-          <thead>
-            <tr><th>Name</th><th>Email</th><th>Booking Status</th><th>Action</th></tr>
-          </thead>
-          <tbody>
-            <tr v-for="p in participants" :key="p.booking_id">
-              <td>{{ p.name }}</td>
-              <td>{{ p.email }}</td>
-              <td><span :class="statusBadge(p.status)" class="badge">{{ p.status }}</span></td>
-              <td>
-                <button class="btn btn-sm btn-outline-success me-1" v-if="p.status==='Booked'" @click="markBooking(p, 'Completed')">Mark Completed</button>
-                <button class="btn btn-sm btn-outline-danger" v-if="p.status==='Booked'" @click="markBooking(p, 'Cancelled')">Cancel</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="table-responsive">
+          <table v-if="participants.length" class="table table-striped bg-white">
+            <thead>
+              <tr><th>Name</th><th>Email</th><th>Booking Status</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in participants" :key="p.booking_id">
+                <td>{{ p.name }}</td>
+                <td>{{ p.email }}</td>
+                <td><span :class="statusBadge(p.status)" class="badge">{{ p.status }}</span></td>
+                <td>
+                  <button class="btn btn-sm btn-outline-success me-1" v-if="p.status==='Booked'" @click="markBooking(p, 'Completed')">Mark Completed</button>
+                  <button class="btn btn-sm btn-outline-danger" v-if="p.status==='Booked'" @click="markBooking(p, 'Cancelled')">Cancel</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
