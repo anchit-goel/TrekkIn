@@ -14,3 +14,4 @@ frontend/dist/
 .DS_Store
 *.pyc
 node_modules/
+backend/celerybeat-schedule

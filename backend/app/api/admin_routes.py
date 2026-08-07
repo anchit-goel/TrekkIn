@@ -60,8 +60,8 @@ def list_treks():
 @role_required('admin')
 def create_trek():
     data = request.get_json()
-    required = ['name', 'location', 'difficulty', 'duration_days', 'total_slots', 'start_date', 'end_date']
-    if not all(k in data and data[k] for k in required):
+    required = ['name', 'location', 'difficulty', 'duration_days', 'total_slots']
+    if not all(k in data and data[k] is not None and data[k] != '' for k in required):
         return jsonify({'error': 'Missing required fields'}), 400
 
     trek = Trek(
@@ -77,6 +77,11 @@ def create_trek():
         trek.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
     if data.get('end_date'):
         trek.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
+
+    if trek.start_date and trek.end_date:
+        actual_gap = (trek.end_date - trek.start_date).days
+        if actual_gap != int(trek.duration_days):
+            return jsonify({'error': f"Duration ({trek.duration_days} days) does not match the gap between start_date and end_date ({actual_gap} days)."}), 400
 
     db.session.add(trek)
     db.session.commit()
@@ -103,6 +108,12 @@ def update_trek(trek_id):
         diff = data['total_slots'] - trek.total_slots
         trek.total_slots = data['total_slots']
         trek.available_slots = max(0, trek.available_slots + diff)
+
+    if trek.start_date and trek.end_date:
+        actual_gap = (trek.end_date - trek.start_date).days
+        if actual_gap != int(trek.duration_days):
+            db.session.rollback()
+            return jsonify({'error': f"Duration ({trek.duration_days} days) does not match the gap between start_date and end_date ({actual_gap} days)."}), 400
 
     db.session.commit()
     cache_delete('open_treks', 'admin_all_treks')
