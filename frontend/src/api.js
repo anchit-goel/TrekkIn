@@ -76,6 +76,9 @@ export const api = {
       method: 'PUT', headers: authHeaders()
     }).then(handle),
 
+  adminSearch: (query) =>
+    fetch(`${API_BASE}/admin/search?q=${encodeURIComponent(query)}`, { headers: authHeaders() }).then(handle),
+
     // staff
   staffDashboard: () =>
     fetch(`${API_BASE}/staff/dashboard`, { headers: authHeaders() }).then(handle),

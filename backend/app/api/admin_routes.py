@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from app import db
 from app.auth import role_required
 from app.models import User, Trek, Booking, StaffProfile
-from datetime import datetime
+from datetime import datetime, date
 from app.cache.redis_client import cache_get, cache_set, cache_delete
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -36,6 +36,7 @@ def list_treks():
         return jsonify(cached), 200
 
     treks = Trek.query.all()
+    today = date.today()
     result = [{
         'id': t.id,
         'name': t.name,
@@ -46,7 +47,7 @@ def list_treks():
         'available_slots': t.available_slots,
         'assigned_staff_id': t.assigned_staff_id,
         'assigned_staff_name': t.assigned_staff.name if t.assigned_staff else None,
-        'status': t.status,
+        'status': 'Completed' if (t.end_date and t.end_date < today) else t.status,
         'start_date': t.start_date.isoformat() if t.start_date else None,
         'end_date': t.end_date.isoformat() if t.end_date else None
     } for t in treks]
@@ -59,8 +60,8 @@ def list_treks():
 @role_required('admin')
 def create_trek():
     data = request.get_json()
-    required = ['name', 'location', 'difficulty', 'duration_days', 'total_slots']
-    if not all(k in data for k in required):
+    required = ['name', 'location', 'difficulty', 'duration_days', 'total_slots', 'start_date', 'end_date']
+    if not all(k in data and data[k] for k in required):
         return jsonify({'error': 'Missing required fields'}), 400
 
     trek = Trek(

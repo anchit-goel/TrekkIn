@@ -4,6 +4,7 @@ from app import db
 from app.auth import role_required
 from app.models import Trek, Booking
 from app.cache.redis_client import cache_delete
+from datetime import date
 
 staff_bp = Blueprint('staff', __name__, url_prefix='/api/staff')
 
@@ -38,6 +39,7 @@ def my_treks():
     treks = Trek.query.filter_by(assigned_staff_id=staff_id).all()
 
     result = []
+    today = date.today()
     for t in treks:
         registered = Booking.query.filter_by(trek_id=t.id, status='Booked').count()
         result.append({
@@ -49,7 +51,7 @@ def my_treks():
             'total_slots': t.total_slots,
             'available_slots': t.available_slots,
             'registered': registered,
-            'status': t.status
+            'status': 'Completed' if (t.end_date and t.end_date < today) else t.status
         })
 
     return jsonify(result), 200
@@ -126,6 +128,10 @@ def update_booking_status(booking_id):
     # if cancelling, free up a slot
     if booking.status == 'Booked' and new_status == 'Cancelled':
         trek.available_slots = min(trek.total_slots, trek.available_slots + 1)
+
+    # if reverting a cancellation back to booked, re-consume the slot
+    if booking.status == 'Cancelled' and new_status == 'Booked':
+        trek.available_slots = max(0, trek.available_slots - 1)
 
     booking.status = new_status
     db.session.commit()

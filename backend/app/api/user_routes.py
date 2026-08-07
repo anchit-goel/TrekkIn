@@ -4,6 +4,7 @@ from app import db
 from app.auth import role_required
 from app.models import Trek, Booking, User
 from app.cache.redis_client import cache_get, cache_set, cache_delete
+from datetime import date
 
 user_bp = Blueprint('user', __name__, url_prefix='/api/user')
 
@@ -20,6 +21,7 @@ def browse_treks():
         return jsonify(cached), 200
 
     treks = Trek.query.filter_by(status='Open').all()
+    today = date.today()
     result = [{
         'id': t.id,
         'name': t.name,
@@ -27,7 +29,7 @@ def browse_treks():
         'difficulty': t.difficulty,
         'duration_days': t.duration_days,
         'available_slots': t.available_slots
-    } for t in treks]
+    } for t in treks if not (t.end_date and t.end_date < today)]
 
     cache_set('open_treks', result, ttl_seconds=30)
     return jsonify(result), 200
@@ -43,6 +45,9 @@ def book_trek():
     trek = Trek.query.get(trek_id)
     if not trek:
         return jsonify({'error': 'Trek not found'}), 404
+
+    if trek.end_date and trek.end_date < date.today():
+        return jsonify({'error': 'This trek has ended and can no longer be booked'}), 400
 
     if trek.status != 'Open':
         return jsonify({'error': 'Trek is not open for booking'}), 400

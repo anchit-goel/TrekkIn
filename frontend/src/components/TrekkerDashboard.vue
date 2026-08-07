@@ -43,7 +43,8 @@
               </div>
               <p class="text-muted small mb-2">{{ t.location }} · {{ t.duration_days }} days</p>
               <p class="mb-3">{{ t.available_slots }} slots left</p>
-              <button class="btn btn-primary mt-auto" :disabled="t.available_slots === 0" @click="bookTrek(t)">
+              <button v-if="bookedTrekIds.has(t.id)" class="btn btn-success mt-auto" disabled>Booked</button>
+              <button v-else class="btn btn-primary mt-auto" :disabled="t.available_slots === 0" @click="bookTrek(t)">
                 {{ t.available_slots === 0 ? 'Full' : 'Book Trek' }}
               </button>
             </div>
@@ -54,13 +55,14 @@
 
     <!-- MY BOOKINGS TAB -->
     <div v-if="tab==='bookings' && !loading">
+      <input v-model="bookingSearch" class="form-control mb-3" placeholder="Search by trek name..." style="max-width: 320px;">
       <div v-if="bookings.length === 0" class="text-muted">You have no bookings yet.</div>
 
       <div class="table-responsive">
         <table v-if="bookings.length" class="table table-striped bg-white">
           <thead><tr><th>Trek</th><th>Location</th><th>Status</th><th>Booking Date</th><th>Action</th></tr></thead>
           <tbody>
-            <tr v-for="b in bookings" :key="b.id">
+            <tr v-for="b in filteredBookings" :key="b.id">
               <td>{{ b.trek_name }}</td>
               <td>{{ b.location }}</td>
               <td><span class="badge" :class="statusBadge(b.status)">{{ b.status }}</span></td>
@@ -76,13 +78,14 @@
 
     <!-- HISTORY TAB -->
     <div v-if="tab==='history' && !loading">
+      <input v-model="historySearch" class="form-control mb-3" placeholder="Search by trek name..." style="max-width: 320px;">
       <div v-if="history.length === 0" class="text-muted">No completed treks yet.</div>
 
       <div class="table-responsive">
         <table v-if="history.length" class="table table-striped bg-white">
           <thead><tr><th>Trek</th><th>Location</th><th>Completed On</th><th>Status</th></tr></thead>
           <tbody>
-            <tr v-for="h in history" :key="h.trek_name + h.date">
+            <tr v-for="h in filteredHistory" :key="h.trek_name + h.date">
               <td>{{ h.trek_name }}</td>
               <td>{{ h.location }}</td>
               <td>{{ h.date.split('T')[0] }}</td>
@@ -131,6 +134,12 @@ const openTreks = ref([])
 const bookings = ref([])
 const history = ref([])
 const profile = ref({ name: '', email: '' })
+const bookingSearch = ref('')
+const historySearch = ref('')
+
+const bookedTrekIds = computed(() => new Set(
+  bookings.value.filter(b => b.status === 'Booked').map(b => b.trek_id)
+))
 
 const locations = computed(() => [...new Set(openTreks.value.map(t => t.location))])
 
@@ -141,6 +150,18 @@ const filteredTreks = computed(() => openTreks.value.filter(t => {
   return matchesSearch && matchesDifficulty && matchesLocation
 }))
 
+const filteredBookings = computed(() => {
+  const q = bookingSearch.value.toLowerCase()
+  if (!q) return bookings.value
+  return bookings.value.filter(b => b.trek_name.toLowerCase().includes(q))
+})
+
+const filteredHistory = computed(() => {
+  const q = historySearch.value.toLowerCase()
+  if (!q) return history.value
+  return history.value.filter(h => h.trek_name.toLowerCase().includes(q))
+})
+
 function clearMsgs() {
   errorMsg.value = ''
   successMsg.value = ''
@@ -148,6 +169,7 @@ function clearMsgs() {
 
 async function loadBrowse() {
   openTreks.value = await api.browseTreks()
+  bookings.value = await api.myBookings()
 }
 async function loadBookings() {
   bookings.value = await api.myBookings()
@@ -194,6 +216,7 @@ async function cancelBooking(booking) {
     await api.cancelBooking(booking.id)
     showToast('Booking cancelled.', 'success')
     await loadBookings()
+    await loadBrowse()
   } catch (e) {
     showToast(e.message, 'error')
   }

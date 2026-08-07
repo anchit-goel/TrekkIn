@@ -82,6 +82,8 @@
           <option v-for="t in treks" :key="t.id" :value="t.id">{{ t.name }}</option>
         </select>
 
+        <input v-model="participantSearch" class="form-control mb-3" placeholder="Search by name..." style="max-width: 300px;">
+
         <div v-if="participants.length === 0" class="text-muted">No bookings for this trek yet.</div>
 
         <div class="table-responsive">
@@ -90,13 +92,14 @@
               <tr><th>Name</th><th>Email</th><th>Booking Status</th><th>Action</th></tr>
             </thead>
             <tbody>
-              <tr v-for="p in participants" :key="p.booking_id">
+              <tr v-for="p in filteredParticipants" :key="p.booking_id">
                 <td>{{ p.name }}</td>
                 <td>{{ p.email }}</td>
                 <td><span :class="statusBadge(p.status)" class="badge">{{ p.status }}</span></td>
                 <td>
                   <button class="btn btn-sm btn-outline-success me-1" v-if="p.status==='Booked'" @click="markBooking(p, 'Completed')">Mark Completed</button>
                   <button class="btn btn-sm btn-outline-danger" v-if="p.status==='Booked'" @click="markBooking(p, 'Cancelled')">Cancel</button>
+                  <button class="btn btn-sm btn-outline-secondary" v-if="p.status==='Completed' || p.status==='Cancelled'" @click="markBooking(p, 'Booked')">Revert to Booked</button>
                 </td>
               </tr>
             </tbody>
@@ -108,7 +111,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { api } from '../api.js'
 
 const tab = ref('treks')
@@ -119,6 +122,13 @@ const stats = ref({ total_treks: 0, total_trekkers: 0, ongoing_treks: 0 })
 const treks = ref([])
 const participants = ref([])
 const selectedTrekId = ref(null)
+const participantSearch = ref('')
+
+const filteredParticipants = computed(() => {
+  const q = participantSearch.value.toLowerCase()
+  if (!q) return participants.value
+  return participants.value.filter(p => p.name.toLowerCase().includes(q))
+})
 
 async function loadAll() {
   loading.value = true

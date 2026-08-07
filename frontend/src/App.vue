@@ -38,7 +38,7 @@
                 type="email"
                 class="form-control"
                 :class="{ 'is-invalid': loginSubmitted && !validEmail(loginEmail) }"
-                placeholder="you@example.com"
+                placeholder="Enter Email"
                 @blur="loginTouched.email = true"
               >
               <div v-if="loginTouched.email && !validEmail(loginEmail)" class="text-danger small mt-1">Enter a valid email address.</div>
@@ -50,7 +50,7 @@
                 type="password"
                 class="form-control"
                 :class="{ 'is-invalid': loginSubmitted && !loginPassword }"
-                placeholder="••••••••"
+                placeholder="Enter Password"
                 @blur="loginTouched.password = true"
               >
               <div v-if="loginTouched.password && !loginPassword" class="text-danger small mt-1">Password is required.</div>
@@ -66,7 +66,7 @@
                 type="text"
                 class="form-control"
                 :class="{ 'is-invalid': regSubmitted && !regName.trim() }"
-                placeholder="Jane Doe"
+                placeholder="Enter Name"
                 @blur="regTouched.name = true"
               >
               <div v-if="regTouched.name && !regName.trim()" class="text-danger small mt-1">Name is required.</div>
@@ -78,7 +78,7 @@
                 type="email"
                 class="form-control"
                 :class="{ 'is-invalid': regSubmitted && !validEmail(regEmail) }"
-                placeholder="you@example.com"
+                placeholder="Enter Email"
                 @blur="regTouched.email = true"
               >
               <div v-if="regTouched.email && !validEmail(regEmail)" class="text-danger small mt-1">Enter a valid email address.</div>
@@ -90,7 +90,7 @@
                 type="password"
                 class="form-control"
                 :class="{ 'is-invalid': regSubmitted && regPassword.length < 6 }"
-                placeholder="••••••••"
+                placeholder="Enter Password"
                 @blur="regTouched.password = true"
               >
               <div v-if="regTouched.password && regPassword.length < 6" class="text-danger small mt-1">Password must be at least 6 characters.</div>
