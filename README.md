@@ -1,12 +1,12 @@
-## TrekkIn - Trekking Management Application
+# TrekkIn - Trekking Management Platform
 
-A modern trekking and expedition management platform.
+TrekkIn is a full-stack web application designed for adventure organizations, tour operators, and outdoor communities to streamline expedition scheduling, participant registrations, and staff operations.
 
 ## About
 
 Adventure organizations require efficient systems to manage trekking activities involving trek organizers, staff, and participants. Currently, many trekking groups rely on spreadsheets, calls, or manual coordination, which makes it difficult to manage trek approvals, participant registrations, slot availability, and booking tracking.
 
-TrekkIn is a full-stack web application that solves this by giving Admins, Trek Staff, and Trekkers dedicated, role-based dashboards to manage the entire trekking lifecycle from trek creation and staff assignment, to booking, participant tracking, and post-trek reporting.
+TrekkIn solves this by giving Admins, Trek Staff, and Trekkers dedicated, role-based dashboards to manage the entire trekking lifecycle from trek creation and staff assignment, to booking, participant tracking, and post-trek reporting.
 
 ## Roles
 
@@ -21,7 +21,6 @@ TrekkIn is a full-stack web application that solves this by giving Admins, Trek 
 - **Database:** SQLite
 - **Caching:** Redis
 - **Background Jobs:** Celery + Redis (daily reminders, monthly reports, async CSV export)
-
 
 ## Core Features
 
@@ -65,14 +64,8 @@ npm run dev
 
 ## Author
 
-Anchit Goel [anchit-goel]
+Anchit Goel ([@anchit-goel](https://github.com/anchit-goel))
 
-## Disclaimer
+## License
 
-I used Claude and Gemini 3.5 primarily for development assistance tasks such as code review-style checks, endpoint/schema documentation drafting, ER/DBML formatting, terminology normalization suggestions, and command guidance (for example checksum and audit commands).The extent of AI/LLM usage is approximately 25-35%, mainly for suggestions, validation support, and documentation/content structuring, major debugging issues as well.
-
-Final decisions, code integration, project-specific modifications, testing runs, and debugging steps were performed manually
-
-Final Pushing done by Me : 07th Aug 2026
-
-Thanks
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
